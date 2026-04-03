@@ -18,7 +18,7 @@ Erstelle einen sprechenden Avatar aus einem beliebigen Portrait-Bild mit Text-to
 │               Flask Backend (Port 5000)          │
 │              (backend/app.py)                    │
 │  - Bild-Upload Handler                           │
-│  - TTS Audio-Generierung (gTTS/pyttsx3)          │
+│  - TTS Audio-Generierung (edge-tts)              │
 │  - Routing zu Lip-Sync Engine                    │
 │  - Video-Serving                                 │
 └──────────┬────────────────────┬──────────────────┘
@@ -45,16 +45,22 @@ Erstelle einen sprechenden Avatar aus einem beliebigen Portrait-Bild mit Text-to
 
 ## Docker Setup (empfohlen)
 
-### 1. Checkpoints herunterladen
+### 1. Submodule initialisieren
+
+```bash
+git submodule update --init --recursive
+```
+
+### 2. Checkpoints herunterladen
 
 SadTalker Checkpoints müssen manuell in `sadtalker/checkpoints/` gespeichert werden:
 
 ```bash
 cd sadtalker
-# Siehe setup.ps1 oder download_checkpoints.py
+python download_checkpoints.py
 ```
 
-### 2. Docker starten
+### 3. Docker starten
 
 ```bash
 docker compose up --build
@@ -64,7 +70,7 @@ Das startet:
 - **Backend** → http://localhost:5000
 - **SadTalker Service** → http://localhost:5001 (mit CUDA)
 
-### 3. Stoppen
+### 4. Stoppen
 
 ```bash
 docker compose down
@@ -72,40 +78,49 @@ docker compose down
 
 ## Manuelle Installation
 
-### 1. Backend Dependencies
+### 1. Submodule initialisieren
+
+```bash
+git submodule update --init --recursive
+```
+
+### 2. Backend Dependencies
 
 ```bash
 pip install -r backend/requirements.txt
 ```
 
-### 2. FFmpeg installieren
+### 3. FFmpeg installieren
 
 ```bash
 winget install Gyan.FFmpeg
 ```
 
-### 3. SadTalker Checkpoints herunterladen
+### 4. SadTalker Checkpoints herunterladen
 
-Im `sadtalker/` Ordner ausführen:
-
-```powershell
+```bash
 cd sadtalker
-.\setup.ps1
+python download_checkpoints.py
 ```
 
-Oder manuell von [SadTalker Releases](https://github.com/OpenTalker/SadTalker/releases/tag/v0.0.2-rc):
+Oder manuell von [SadTalker Releases](https://github.com/OpenTalker/SadTalker/releases/tag/v0.0.2-rc) und [HF Space](https://huggingface.co/spaces/John6666/SadTalkerGitHub/tree/main/checkpoints):
 
 | Datei | Größe |
 |-------|-------|
 | `SadTalker_V0.0.2_256.safetensors` | ~645 MB |
+| `SadTalker_V0.0.2_512.safetensors` | ~691 MB |
 | `mapping_00109-model.pth.tar` | ~149 MB |
 | `mapping_00229-model.pth.tar` | ~149 MB |
-| `facevid2vid_00189-model.pth.tar` | ~300 MB |
-| `epoch_20.pth` | ~100 MB |
-| `shape_predictor_68_face_landmarks.dat` | ~60 MB |
+| `facevid2vid_00189-model.pth.tar` | ~2 GB |
+| `epoch_20.pth` | ~275 MB |
+| `shape_predictor_68_face_landmarks.dat` | ~95 MB |
 | `hub.zip` → nach `hub/` entpacken | ~200 MB |
 
 Alle Dateien in `sadtalker/checkpoints/` speichern.
+
+### 5. Wav2Lip Checkpoint
+
+Lade `wav2lip.pth` von [Nekochu/Wav2Lip](https://huggingface.co/Nekochu/Wav2Lip/resolve/main/wav2lip.pth) und speichere es in `wav2lip/`.
 
 ## Starten
 
@@ -136,10 +151,11 @@ python backend/app.py
 
 1. **Bild hochladen**: Drag & Drop oder klicken
 2. **Text eingeben**: Was soll der Avatar sagen?
-3. **Engine wählen**: Wav2Lip (nur Lippen) oder SadTalker (mit Kopfpose)
-4. **Posen-Stil**: Natürlich → Expressiv
-5. **Ausdrucksstärke**: Dezent → Übertrieben
-6. **Generieren** und Video abspielen
+3. **Stimme wählen**: 30+ Microsoft Edge Neural Voices (Deutsch, Englisch, Französisch, Spanisch, Italienisch)
+4. **Engine wählen**: Wav2Lip (nur Lippen) oder SadTalker (mit Kopfpose)
+5. **Posen-Stil**: Natürlich → Expressiv
+6. **Ausdrucksstärke**: Dezent → Übertrieben
+7. **Generieren** und Video abspielen
 
 ## Projektstruktur
 
@@ -150,16 +166,17 @@ speeking/
 │   └── requirements.txt    # Python Dependencies
 ├── frontend/
 │   └── index.html          # Web UI
-├── wav2lip/
-│   ├── inference.py        # Wav2Lip Lip-Sync
-│   └── wav2lip.pth         # Wav2Lip Checkpoint
-├── sadtalker/
+├── wav2lip/                # Git Submodule
+├── sadtalker/              # Git Submodule
 │   ├── sadtalker_service.py  # SadTalker HTTP-Service (Port 5001)
 │   ├── inference.py          # SadTalker Inference
 │   ├── checkpoints/          # SadTalker Modelle
-│   └── setup.ps1             # Download-Skript für Checkpoints
+│   └── download_checkpoints.py
 ├── uploads/                # Hochgeladene Bilder
 ├── outputs/                # Generierte Videos
+├── docker-compose.yml
+├── Dockerfile.backend
+├── Dockerfile.sadtalker
 └── README.md
 ```
 
@@ -199,5 +216,19 @@ SadTalker benötigt dlib für die Gesichtserkennung. Unter Python 3.12 kann die 
 
 ## Lizenz
 
-- Wav2Lip: [Rudrabha et al.](https://github.com/Rudrabha/Wav2Lip)
-- SadTalker: [OpenTalker](https://github.com/OpenTalker/SadTalker)
+Dieses Projekt ist unter der **MIT License** lizenziert – siehe [LICENSE](LICENSE).
+
+## Danksagungen
+
+Dieses Projekt basiert auf folgenden Open-Source-Projekten:
+
+| Projekt | Lizenz | Beschreibung |
+|---------|--------|--------------|
+| [**SadTalker**](https://github.com/OpenTalker/SadTalker) | MIT | Audio-gesteuerte 3D-Gesichtsanimation mit Kopfpose |
+| [**Wav2Lip**](https://github.com/Rudrabha/Wav2Lip) | MIT | Lip-Sync aus Bild und Audio |
+| [**edge-tts**](https://github.com/rany2/edge-tts) | LGPL-3.0 | Microsoft Edge Text-to-Speech API |
+| [**GFPGAN**](https://github.com/TencentARC/GFPGAN) | Apache-2.0 | Gesichtsverbesserung |
+| [**face_alignment**](https://github.com/1adrianb/face-alignment) | BSD-3 | Gesichtserkennung und Landmark-Erkennung |
+| [**Deep3DFaceRecon_pytorch**](https://github.com/sicxu/Deep3DFaceRecon_pytorch) | MIT | 3D-Gesichtsrekonstruktion |
+
+Vielen Dank an alle Contributors dieser großartigen Projekte!
