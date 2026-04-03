@@ -1,0 +1,22 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg git \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir "numpy<2" flask flask-cors kornia_rs face_alignment imageio imageio-ffmpeg librosa numba resampy pydub kornia yacs pyyaml joblib scikit-image facexlib gfpgan av safetensors tqdm
+
+RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cu124
+
+# Patch basicsr for torchvision compatibility
+RUN sed -i 's/from torchvision.transforms.functional_tensor import rgb_to_grayscale/from torchvision.transforms.functional import rgb_to_grayscale/' /usr/local/lib/python3.12/site-packages/basicsr/data/degradations.py
+
+COPY sadtalker/ ./
+
+RUN mkdir -p results
+
+EXPOSE 5001
+
+CMD ["python", "sadtalker_service.py"]

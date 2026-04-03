@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TTS Avatar - Sprechender Avatar</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 2rem 0;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: #8892b0;
+            font-size: 1.1rem;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .panel h2 {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            color: #00d4ff;
+        }
+
+        .upload-zone {
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        .upload-zone input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .upload-zone .icon {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-zone p {
+            color: #8892b0;
+        }
+
+        .preview-container {
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        .preview-container img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 1rem;
+            color: #fff;
+            font-size: 1rem;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #00d4ff;
+        }
+
+        .options {
+            margin-top: 1rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .option-group {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .option-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: #8892b0;
+            margin-bottom: 0.5rem;
+        }
+
+        select, input[type="range"] {
+            width: 100%;
+            padding: 0.5rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: #fff;
+            font-size: 0.9rem;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #00d4ff;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 1.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00d4ff, #7b2cbf);
+            color: #fff;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.3);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .video-container {
+            margin-top: 1rem;
+            text-align: center;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .video-container video {
+            max-width: 100%;
+            border-radius: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .placeholder {
+            color: #8892b0;
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .status {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            display: none;
+        }
+
+        .status.info {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            display: block;
+        }
+
+        .status.success {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            display: block;
+        }
+
+        .status.error {
+            background: rgba(255, 71, 87, 0.1);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            display: block;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #00d4ff;
+            animation: spin 1s linear infinite;
+            margin-right: 0.5rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            margin-top: 1rem;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-bar.active {
+            display: block;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+            width: 0%;
+            transition: width 0.3s ease;
+            animation: progress 3s ease-in-out infinite;
+        }
+
+        @keyframes progress {
+            0% { width: 0%; }
+            50% { width: 70%; }
+            100% { width: 95%; }
+        }
+
+        .gallery {
+            margin-top: 1rem;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .gallery-item {
+            aspect-ratio: 1;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .gallery-item:hover, .gallery-item.selected {
+            border-color: #00d4ff;
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>TTS Avatar</h1>
+            <p>Erstelle einen sprechenden Avatar aus deinem Bild</p>
+        </header>
+
+        <div class="main-grid">
+            <div class="panel">
+                <h2>Avatar-Bild</h2>
+                <div class="upload-zone" id="uploadZone">
+                    <input type="file" id="imageInput" accept="image/*">
+                    <div class="icon">&#128247;</div>
+                    <p>Bild hierher ziehen oder klicken zum Auswählen</p>
+                    <small>PNG, JPG, WEBP</small>
+                </div>
+
+                <div class="gallery" id="gallery" style="display: none;">
+                    <small style="color: #8892b0;">Zuletzt hochgeladen:</small>
+                    <div class="gallery-grid" id="galleryGrid"></div>
+                </div>
+
+                <div class="preview-container" id="previewContainer" style="display: none;">
+                    <img id="previewImage" src="" alt="Avatar Preview">
+                </div>
+
+                <h2 style="margin-top: 1.5rem;">Text eingeben</h2>
+                <textarea id="textInput" placeholder="Gib den Text ein, den der Avatar sprechen soll..."></textarea>
+
+                <div class="options">
+                    <div class="option-group">
+                        <label>Stimme</label>
+                        <select id="voiceSelect">
+                            <optgroup label="Deutsch">
+                                <option value="de-DE-KatjaNeural" selected>Katja (weiblich)</option>
+                                <option value="de-DE-ConradNeural">Conrad (männlich)</option>
+                                <option value="de-DE-AmalaNeural">Amala (weiblich)</option>
+                                <option value="de-DE-KillianNeural">Killian (männlich)</option>
+                            </optgroup>
+                            <optgroup label="Multilingual – Deutsch">
+                                <option value="de-DE-SeraphinaMultilingualNeural">Seraphina (weiblich)</option>
+                                <option value="de-DE-FlorianMultilingualNeural">Florian (männlich)</option>
+                            </optgroup>
+                            <optgroup label="Multilingual – Englisch">
+                                <option value="en-US-AvaMultilingualNeural">Ava (weiblich)</option>
+                                <option value="en-US-EmmaMultilingualNeural">Emma (weiblich)</option>
+                                <option value="en-US-AndrewMultilingualNeural">Andrew (männlich)</option>
+                                <option value="en-US-BrianMultilingualNeural">Brian (männlich)</option>
+                            </optgroup>
+                            <optgroup label="Multilingual – Französisch">
+                                <option value="fr-FR-VivienneMultilingualNeural">Vivienne (weiblich)</option>
+                                <option value="fr-FR-RemyMultilingualNeural">Remy (männlich)</option>
+                            </optgroup>
+                            <optgroup label="Multilingual – Italienisch">
+                                <option value="it-IT-GiuseppeMultilingualNeural">Giuseppe (männlich)</option>
+                            </optgroup>
+                            <optgroup label="Englisch">
+                                <option value="en-US-JennyNeural">Jenny (weiblich)</option>
+                                <option value="en-US-GuyNeural">Guy (männlich)</option>
+                                <option value="en-US-AriaNeural">Aria (weiblich)</option>
+                                <option value="en-US-DavisNeural">Davis (männlich)</option>
+                                <option value="en-US-AnaNeural">Ana (weiblich)</option>
+                                <option value="en-US-AndrewNeural">Andrew (männlich)</option>
+                                <option value="en-US-EmmaNeural">Emma (weiblich)</option>
+                                <option value="en-US-BrandonNeural">Brandon (männlich)</option>
+                                <option value="en-US-MichelleNeural">Michelle (weiblich)</option>
+                                <option value="en-US-RogerNeural">Roger (männlich)</option>
+                                <option value="en-US-SteffanNeural">Steffan (männlich)</option>
+                            </optgroup>
+                            <optgroup label="Englisch (UK)">
+                                <option value="en-GB-SoniaNeural">Sonia (weiblich)</option>
+                                <option value="en-GB-RyanNeural">Ryan (männlich)</option>
+                                <option value="en-GB-LibbyNeural">Libby (weiblich)</option>
+                                <option value="en-GB-ThomasNeural">Thomas (männlich)</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="option-group">
+                        <label>Geschwindigkeit</label>
+                        <select id="speedSelect">
+                            <option value="-20%">Sehr langsam</option>
+                            <option value="-10%">Langsam</option>
+                            <option value="+0%" selected>Normal</option>
+                            <option value="+10%">Schnell</option>
+                            <option value="+20%">Sehr schnell</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="options" style="margin-top: 1rem;">
+                    <div class="option-group">
+                        <label>Engine</label>
+                        <select id="engineSelect">
+                            <option value="sadtalker" selected>SadTalker (mit Kopfpose)</option>
+                            <option value="wav2lip">Wav2Lip (nur Lippen)</option>
+                        </select>
+                    </div>
+                    <div class="option-group">
+                        <label>Posen-Stil</label>
+                        <select id="poseStyleSelect">
+                            <option value="0">Natürlich</option>
+                            <option value="5">Leichte Bewegung</option>
+                            <option value="15">Dynamisch</option>
+                            <option value="30">Expressiv</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="options" style="margin-top: 0.5rem;">
+                    <div class="option-group">
+                        <label>Ausdrucksstärke</label>
+                        <select id="expressionScale">
+                            <option value="0.5">Dezent</option>
+                            <option value="1.0" selected>Normal</option>
+                            <option value="1.5">Verstärkt</option>
+                            <option value="2.0">Übertrieben</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" id="generateBtn" disabled>
+                    <span id="btnText">Avatar generieren</span>
+                </button>
+
+                <div class="progress-bar" id="progressBar">
+                    <div class="progress-fill"></div>
+                </div>
+
+                <div class="status" id="status"></div>
+            </div>
+
+            <div class="panel">
+                <h2>Ergebnis</h2>
+                <div class="video-container" id="videoContainer">
+                    <div class="placeholder">
+                        <div style="font-size: 4rem; margin-bottom: 1rem;">&#127909;</div>
+                        <p>Das generierte Video wird hier angezeigt</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '';
+
+        let currentImageId = null;
+        let generationCounter = 0;
+        let isGenerating = false;
+
+        const uploadZone = document.getElementById('uploadZone');
+        const imageInput = document.getElementById('imageInput');
+        const previewContainer = document.getElementById('previewContainer');
+        const previewImage = document.getElementById('previewImage');
+        const textInput = document.getElementById('textInput');
+        const generateBtn = document.getElementById('generateBtn');
+        const btnText = document.getElementById('btnText');
+        const status = document.getElementById('status');
+        const progressBar = document.getElementById('progressBar');
+        const videoContainer = document.getElementById('videoContainer');
+        const gallery = document.getElementById('gallery');
+        const galleryGrid = document.getElementById('galleryGrid');
+
+        function showStatus(message, type) {
+            status.className = `status ${type}`;
+            status.innerHTML = message;
+        }
+
+        function hideStatus() {
+            status.className = 'status';
+            status.style.display = 'none';
+        }
+
+        function updateGenerateButton() {
+            generateBtn.disabled = !(currentImageId && textInput.value.trim());
+        }
+
+        imageInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            showStatus('<span class="spinner"></span> Bild wird hochgeladen...', 'info');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/upload-image`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    currentImageId = data.image_id;
+                    previewImage.src = data.image_url;
+                    previewContainer.style.display = 'block';
+                    showStatus('Bild erfolgreich hochgeladen!', 'success');
+                    updateGenerateButton();
+                    loadGallery();
+                } else {
+                    showStatus(`Fehler: ${data.error}`, 'error');
+                }
+            } catch (err) {
+                showStatus(`Fehler beim Hochladen: ${err.message}`, 'error');
+            }
+        });
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                imageInput.files = files;
+                imageInput.dispatchEvent(new Event('change'));
+            }
+        });
+
+        textInput.addEventListener('input', updateGenerateButton);
+
+        generateBtn.addEventListener('click', async () => {
+            if (!currentImageId || !textInput.value.trim() || isGenerating) return;
+
+            isGenerating = true;
+            generationCounter++;
+            const thisGeneration = generationCounter;
+
+            generateBtn.disabled = true;
+            btnText.innerHTML = '<span class="spinner"></span> Generiere...';
+            progressBar.classList.add('active');
+            showStatus('<span class="spinner"></span> Audio wird generiert und Lip-Sync wird berechnet...', 'info');
+
+            // Clear old video
+            videoContainer.innerHTML = `
+                <div class="placeholder">
+                    <div class="spinner" style="width:40px;height:40px;border-width:4px;margin-bottom:1rem;"></div>
+                    <p>Video wird generiert...</p>
+                </div>
+            `;
+
+            try {
+                const response = await fetch(`${API_BASE}/api/generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        image_id: currentImageId,
+                        text: textInput.value.trim(),
+                        voice: document.getElementById('voiceSelect').value,
+                        rate: document.getElementById('speedSelect').value,
+                        engine: document.getElementById('engineSelect').value,
+                        pose_style: parseInt(document.getElementById('poseStyleSelect').value),
+                        expression_scale: parseFloat(document.getElementById('expressionScale').value)
+                    })
+                });
+
+                // Only update UI if this is still the latest generation
+                if (thisGeneration !== generationCounter) {
+                    console.log('Generation superseded by newer request');
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    progressBar.classList.remove('active');
+                    showStatus('Video erfolgreich generiert!', 'success');
+                    // Add cache-busting timestamp
+                    const videoUrl = `${data.video_url}?t=${Date.now()}`;
+                    videoContainer.innerHTML = `
+                        <video controls autoplay>
+                            <source src="${videoUrl}" type="video/mp4">
+                            Dein Browser unterstützt kein Video.
+                        </video>
+                    `;
+                } else {
+                    showStatus(`Fehler: ${data.error}`, 'error');
+                }
+            } catch (err) {
+                if (thisGeneration !== generationCounter) return;
+                showStatus(`Fehler bei der Generierung: ${err.message}`, 'error');
+            } finally {
+                if (thisGeneration === generationCounter) {
+                    isGenerating = false;
+                    generateBtn.disabled = false;
+                    btnText.textContent = 'Avatar generieren';
+                    progressBar.classList.remove('active');
+                }
+            }
+        });
+
+        async function loadGallery() {
+            try {
+                const response = await fetch(`${API_BASE}/api/images`);
+                const data = await response.json();
+
+                if (data.images.length > 0) {
+                    gallery.style.display = 'block';
+                    galleryGrid.innerHTML = data.images.map(img => `
+                        <div class="gallery-item ${img.id === currentImageId ? 'selected' : ''}" 
+                             onclick="selectImage('${img.id}', '${img.url}')">
+                            <img src="${img.url}" alt="${img.name}">
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {
+                console.error('Failed to load gallery:', err);
+            }
+        }
+
+        function selectImage(id, url) {
+            currentImageId = id;
+            previewImage.src = url;
+            previewContainer.style.display = 'block';
+            updateGenerateButton();
+            loadGallery();
+        }
+
+        loadGallery();
+    </script>
+</body>
+</html>

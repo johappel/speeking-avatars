@@ -1,0 +1,7 @@
+flask
+flask-cors
+edge-tts
+Pillow
+numpy
+opencv-python
+requests

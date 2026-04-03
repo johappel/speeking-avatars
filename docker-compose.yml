@@ -1,0 +1,38 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend:/app/backend
+      - ./frontend:/app/frontend
+      - ./uploads:/app/uploads
+      - ./outputs:/app/outputs
+    environment:
+      - SADTALKER_URL=http://sadtalker:5001
+    depends_on:
+      - sadtalker
+    restart: unless-stopped
+
+  sadtalker:
+    build:
+      context: .
+      dockerfile: Dockerfile.sadtalker
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./sadtalker:/app
+      - ./uploads:/app/uploads
+      - ./outputs:/app/outputs
+      - ./sadtalker/checkpoints:/app/checkpoints
+      - ./sadtalker/results:/app/results
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
